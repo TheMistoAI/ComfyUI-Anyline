@@ -4,3 +4,4 @@ kornia
 huggingface_hub
 opencv-python
 scikit-image
+einops
