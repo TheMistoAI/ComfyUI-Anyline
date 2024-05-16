@@ -1,0 +1,6 @@
+torch
+numpy
+kornia
+huggingface_hub
+opencv-python
+scikit-image
