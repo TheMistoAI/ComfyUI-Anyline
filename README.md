@@ -22,6 +22,8 @@ Anyline uses a processing resolution of 1280px, and hence comparisons are made a
 
 Anyline, in combination with the Mistoline ControlNet model, forms a complete SDXL workflow, maximizing precise control and harnessing the generative capabilities of the SDXL model. Anyline can also be used in SD1.5 workflows with SD1.5's ControlNet, although it generally performs better in the Anyline+MistoLine setup within the SDXL workflow.
 
+![](examples/results.png)
+
 **Note: The final result is highly dependent on the base model used. Please select the appropriate base model according to your needs.**
 
 ## Video Tutorial
