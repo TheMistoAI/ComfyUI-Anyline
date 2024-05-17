@@ -48,6 +48,8 @@ class AnyLine:
     def get_anyline(self, image):
         # Process the image with MTEED model
         print(image[0])
+        res = self.model(image.permute(0, 3, 1, 2))
+        print("res: ", res)
         mteed_result = self.mteed_detector(image[0], detect_resolution=image[0].shape[0])
         print("mteed_result: ", mteed_result)
 
@@ -57,9 +59,10 @@ class AnyLine:
         print("lineart_result: ", lineart_result)
         print("lineart_result: ", lineart_result.shape)
         # Combine the results
-        cv2.imshow('lineart_result', (lineart_result * 255.).astype(np.uint8))
-        cv2.waitKey(0)
-        return (torch.tensor(lineart_result),)
+
+
+        print(torch.tensor(lineart_result).unsqueeze(0).shape)
+        return (torch.tensor(lineart_result).unsqueeze(0),)
     
     class MTEEDDetector:
         def __init__(self, model, device):
