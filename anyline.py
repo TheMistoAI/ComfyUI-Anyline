@@ -7,6 +7,9 @@ from huggingface_hub import hf_hub_download
 import cv2
 from skimage import morphology
 from einops import rearrange
+from custom_nodes.comfyui_controlnet_aux.utils import common_annotator_call
+from custom_nodes.comfyui_controlnet_aux.src.controlnet_aux.teed import TEDDetector
+from custom_nodes.comfyui_controlnet_aux.src.controlnet_aux.teed.ted import TED
 
 class AnyLine:
     @classmethod
@@ -24,9 +27,9 @@ class AnyLine:
     CATEGORY = "TheMisto/image/preprocessor"
 
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = self.load_model()
-        self.mteed_detector = self.MTEEDDetector(self.model, self.device)
+        self.device = "cpu"
+        # self.mteed_model = TEDDetector(self.model)
+        # self.mteed_detector = self.MTEEDDetector(self.model, self.device)
 
     def load_model(self):
         checkpoint_filename = "MTEED.pth"
@@ -40,29 +43,35 @@ class AnyLine:
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             checkpoint_path = hf_hub_download(repo_id="TheMistoAI/MistoLine", filename=checkpoint_filename, local_dir=checkpoint_dir)
 
-        model = MTEED().to(self.device)
+        model = TED()
         model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
         model.eval()
         return model
 
     def get_anyline(self, image):
+        print(image.shape)
         # Process the image with MTEED model
-        print(image[0])
-        res = self.model(image.permute(0, 3, 1, 2))
-        print("res: ", res)
-        mteed_result = self.mteed_detector(image[0], detect_resolution=image[0].shape[0])
+        # mteed_result = self.mteed_detector(image[0], detect_resolution=image[0].shape[0])
+        mteed_model = TEDDetector(model=self.load_model()).to(self.device)
+        print(mteed_model)
+        mteed_result = common_annotator_call(mteed_model, image, resolution=1024)
+        mteed_result = mteed_result.squeeze(0).numpy()
         print("mteed_result: ", mteed_result)
+        print("mteed_result shape: ", mteed_result.shape)
 
         # Process the image with the lineart standard preprocessor
-        print(image)
         lineart_result = process_line_art(image,threshold=0,gaussian_sigma=1,intensity_threshold=15,min_size=0)
         print("lineart_result: ", lineart_result)
-        print("lineart_result: ", lineart_result.shape)
+        print("lineart_result shape: ", lineart_result.shape)
         # Combine the results
-
-
-        print(torch.tensor(lineart_result).unsqueeze(0).shape)
-        return (torch.tensor(lineart_result).unsqueeze(0),)
+        top = lineart_result
+        temp = 1 - (1. - top) * (1. - mteed_result)
+        result = mteed_result * (1 - top.astype(bool)) + temp * top.astype(bool)
+        cv2.imshow('anyline', (mteed_result * 255.).astype(np.uint8))
+        cv2.imshow('lineart', (lineart_result * 255.).astype(np.uint8))
+        cv2.imshow('anyline+lineart', (result * 255.).astype(np.uint8))
+        cv2.waitKey(0)
+        return (torch.tensor(result).unsqueeze(0),)
     
     class MTEEDDetector:
         def __init__(self, model, device):
@@ -77,10 +86,12 @@ class AnyLine:
                 image_teed = torch.from_numpy(input_image.copy()).float().to(self.device)
                 image_teed = rearrange(image_teed, 'h w c -> 1 c h w')
                 edges = self.model(image_teed)
+                print("edges: ", edges)
                 edges = [e.detach().cpu().numpy().astype(np.float32)[0, 0] for e in edges]
                 edges = [cv2.resize(e, (W, H), interpolation=cv2.INTER_LINEAR) for e in edges]
                 edges = np.stack(edges, axis=2)
                 edge = 1 / (1 + np.exp(-np.mean(edges, axis=2).astype(np.float64)))
+                print("edge: ", edge)
                 if safe_steps != 0:
                     edge = safe_step(edge, safe_steps)
                 edge = (edge * 255.0).clip(0, 255).astype(np.uint8)
@@ -118,8 +129,8 @@ def lineart_standard_preprocessor(image, guassian_sigma=6.0, intensity_threshold
     :param resolution:
     :return:
     """
-    model=LineartStandardDetector()
-    tensor_image=image
+    model = LineartStandardDetector()
+    tensor_image = image
     input_batch = False
     kwargs= {'guassian_sigma':guassian_sigma, 'intensity_threshold':intensity_threshold, 'resolution':resolution}
     if "detect_resolution" in kwargs:
@@ -146,7 +157,7 @@ def HWC3(x):
     assert x.dtype == np.uint8
     if x.ndim == 2:
         x = x[:, :, None]
-    assert x.ndim == 3
+    assert x.ndim == 3, x.shape
     H, W, C = x.shape
     assert C == 1 or C == 3 or C == 4
     if C == 3:
@@ -223,7 +234,7 @@ def get_color_range(numpy_0_1, grey_num_min_0_1, grey_num_max_0_1, other_color=0
     return result
 def process_line_art(img,threshold=0.15,gaussian_sigma=2,intensity_threshold=3,min_size=36):
     # threshold=0.5,gaussian_sigma=3,intensity_threshold=15,min_size=81
-    lineart_standard_res = lineart_standard_preprocessor(image=img,guassian_sigma=gaussian_sigma, intensity_threshold=intensity_threshold,resolution=img.shape[0]).squeeze().numpy()
+    lineart_standard_res = lineart_standard_preprocessor(image=img, guassian_sigma=gaussian_sigma, intensity_threshold=intensity_threshold, resolution=1024).squeeze().numpy()
     lineart_standard_res = get_color_range(lineart_standard_res,threshold,1,other_color=0,mode=2)
     cleaned = morphology.remove_small_objects(lineart_standard_res.astype(bool), min_size=min_size, connectivity=1)
     return lineart_standard_res*cleaned
