@@ -1,7 +1,5 @@
 torch
 numpy
-kornia
+pathlib
 huggingface_hub
-opencv-python
 scikit-image
-einops

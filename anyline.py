@@ -47,13 +47,13 @@ class AnyLine:
     def get_anyline(self, image):
         # Process the image with MTEED model
         mteed_model = TEDDetector(model=self.load_model()).to(self.device)
-        mteed_result = common_annotator_call(mteed_model, image, resolution=1024)
+        mteed_result = common_annotator_call(mteed_model, image, resolution=1280)
         mteed_result = mteed_result.squeeze(0).numpy()
 
 
         # Process the image with the lineart standard preprocessor
         lineart_standard_detector = LineartStandardDetector()
-        lineart_result  = common_annotator_call(lineart_standard_detector, image, guassian_sigma=2, intensity_threshold=3, resolution=1024).squeeze().numpy()
+        lineart_result  = common_annotator_call(lineart_standard_detector, image, guassian_sigma=2, intensity_threshold=3, resolution=1280).squeeze().numpy()
         lineart_result  = get_intensity_mask(lineart_result, lower_bound=0, upper_bound=1)
         cleaned = morphology.remove_small_objects(lineart_result .astype(bool), min_size=36, connectivity=1)
         lineart_result = lineart_result *cleaned
