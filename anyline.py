@@ -1,4 +1,3 @@
-import os
 import torch
 import numpy as np
 import kornia as kn
@@ -7,7 +6,6 @@ from .teed_module import MTEED
 from huggingface_hub import hf_hub_download
 import cv2
 from skimage import morphology
-from PIL import Image
 from einops import rearrange
 
 class AnyLine:
@@ -49,16 +47,18 @@ class AnyLine:
 
     def get_anyline(self, image):
         # Process the image with MTEED model
+        print(image[0])
         mteed_result = self.mteed_detector(image[0], detect_resolution=image[0].shape[0])
         print("mteed_result: ", mteed_result)
 
         # Process the image with the lineart standard preprocessor
-        lineart_result = process_line_art(image[0])
+        print(image)
+        lineart_result = process_line_art(image,threshold=0,gaussian_sigma=1,intensity_threshold=15,min_size=0)
         print("lineart_result: ", lineart_result)
-        
+        print("lineart_result: ", lineart_result.shape)
         # Combine the results
-        
-
+        cv2.imshow('lineart_result', (lineart_result * 255.).astype(np.uint8))
+        cv2.waitKey(0)
         return (torch.tensor(lineart_result),)
     
     class MTEEDDetector:
@@ -85,31 +85,6 @@ class AnyLine:
             detected_map = remove_pad(HWC3(edge))
 
             return  detected_map
-    
-def safe_step(x, step=2):
-    y = x.astype(np.float32) * float(step + 1)
-    y = y.astype(np.int32).astype(np.float32) / float(step)
-    return y
-def lineart_standard_preprocessor(image, guassian_sigma=6.0, intensity_threshold=8, resolution=1024):
-    """
-    Standard lineart
-    :param image: Input image (should be a single image tensor)
-    :param guassian_sigma: Gaussian blur sigma
-    :param intensity_threshold: Threshold for intensity to define edges
-    :param resolution: Resolution for detection
-    :return: Processed image tensor
-    """
-    model = LineartStandardDetector()
-    kwargs = {'guassian_sigma': guassian_sigma, 'intensity_threshold': intensity_threshold, 'resolution': resolution}
-    
-    detect_resolution = kwargs.pop('resolution', 512) if isinstance(kwargs.get('resolution', 512), int) and kwargs.get('resolution', 512) >= 64 else 512
-    
-    # Convert tensor image to numpy array, apply model, and convert back to tensor
-    np_image = np.asarray(image.cpu() * 255., dtype=np.uint8)  # Assuming the input image tensor is in the range [0, 1]
-    np_result = model(np_image, output_type="np", detect_resolution=detect_resolution, **kwargs)
-    tensor_result = torch.from_numpy(np_result.astype(np.float32) / 255.0)  # Convert back to tensor in the range [0, 1]
-    
-    return tensor_result
 
 class LineartStandardDetector:
     def __call__(self, input_image=None, guassian_sigma=6.0, intensity_threshold=8, detect_resolution=512,
@@ -127,6 +102,43 @@ class LineartStandardDetector:
         detected_map = HWC3(remove_pad(detected_map))
 
         return detected_map
+def safe_step(x, step=2):
+    y = x.astype(np.float32) * float(step + 1)
+    y = y.astype(np.int32).astype(np.float32) / float(step)
+    return y
+def lineart_standard_preprocessor(image, guassian_sigma=6.0, intensity_threshold=8, resolution=1024):
+    """
+    标准lineart
+    :param image:
+    :param guassian_sigma:
+    :param intensity_threshold:
+    :param resolution:
+    :return:
+    """
+    model=LineartStandardDetector()
+    tensor_image=image
+    input_batch = False
+    kwargs= {'guassian_sigma':guassian_sigma, 'intensity_threshold':intensity_threshold, 'resolution':resolution}
+    if "detect_resolution" in kwargs:
+        del kwargs["detect_resolution"] #Prevent weird case?
+
+    if "resolution" in kwargs:
+        detect_resolution = kwargs["resolution"] if type(kwargs["resolution"]) == int and kwargs["resolution"] >= 64 else 512
+        del kwargs["resolution"]
+    else:
+        detect_resolution = 512
+
+    if input_batch:
+        np_images = np.asarray(tensor_image * 255., dtype=np.uint8)
+        np_results = model(np_images, output_type="np", detect_resolution=detect_resolution, **kwargs)
+        return torch.from_numpy(np_results.astype(np.float32) / 255.0)
+
+    out_list = []
+    for image in tensor_image:
+        np_image = np.asarray(image.cpu() * 255., dtype=np.uint8)
+        np_result = model(np_image, output_type="np", detect_resolution=detect_resolution, **kwargs)
+        out_list.append(torch.from_numpy(np_result.astype(np.float32) / 255.0))
+    return torch.stack(out_list, dim=0)
 def HWC3(x):
     assert x.dtype == np.uint8
     if x.ndim == 2:
@@ -209,8 +221,6 @@ def get_color_range(numpy_0_1, grey_num_min_0_1, grey_num_max_0_1, other_color=0
 def process_line_art(img,threshold=0.15,gaussian_sigma=2,intensity_threshold=3,min_size=36):
     # threshold=0.5,gaussian_sigma=3,intensity_threshold=15,min_size=81
     lineart_standard_res = lineart_standard_preprocessor(image=img,guassian_sigma=gaussian_sigma, intensity_threshold=intensity_threshold,resolution=img.shape[0]).squeeze().numpy()
-    print("lineart_standard_res: ", lineart_standard_res)
     lineart_standard_res = get_color_range(lineart_standard_res,threshold,1,other_color=0,mode=2)
-    print("lineart_standard_res 2: ", lineart_standard_res)
     cleaned = morphology.remove_small_objects(lineart_standard_res.astype(bool), min_size=min_size, connectivity=1)
     return lineart_standard_res*cleaned
