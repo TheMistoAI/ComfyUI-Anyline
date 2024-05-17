@@ -1,5 +1,3 @@
-torch
-numpy
 pathlib
 huggingface_hub
 scikit-image
