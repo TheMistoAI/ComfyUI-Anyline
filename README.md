@@ -10,6 +10,8 @@ Anyline is a ControlNet line preprocessor that accurately extracts object edges,
 
 The model and algorithms used in Anyline are based on innovative efforts stemming from the "Tiny and Efficient Model for the Edge Detection Generalization (TEED)" paper ([arXiv:2308.06468](https://arxiv.org/abs/2308.06468)). The TEED preset in ComfyUI also originates from this work, marking it as a powerful visual algorithm (TEED is currently the state-of-the-art). For more details, please refer to the paper.
 
+![](examples/TEED.png)
+
 ## Comparison with Other Line Extraction Preprocessors
 
 Anyline uses a processing resolution of 1280px, and hence comparisons are made at this resolution. Comparing with other commonly used line preprocessors, Anyline offers substantial advantages in contour accuracy, object details, material textures, and font recognition (especially in large scenes). It also performs better in reducing noise in most scenes, resulting in cleaner image processing with fewer inaccuracies during generation.
