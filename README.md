@@ -1,6 +1,6 @@
-## Overview
+## Anyline
 
-**Anyline: A Fast, Accurate, and Detailed Line Detection Preprocessor**
+**A Fast, Accurate, and Detailed Line Detection Preprocessor**
 
 ![](examples/intro.png)
 
