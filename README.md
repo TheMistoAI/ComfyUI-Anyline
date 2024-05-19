@@ -62,10 +62,14 @@ Upon installation, the Anyline preprocessor can be accessed in ComfyUI via searc
 
 You can download this workflow JSON here: [ComfyUI Workflow](Anyline%2BMistoLine_ComfyUI_workflow.json)
 
+## Use in A1111 sd-webui-controlnet
+Follow instruction in https://github.com/Mikubill/sd-webui-controlnet/discussions/2907.
+![331892429-e467798f-e96d-4e90-a5d8-306d5b76274f](https://github.com/huchenlei/ComfyUI-Anyline/assets/20929282/431a1441-e84e-4931-8d23-1627a54caa04)
+
+
 ## Limitations and Future Development
 
 - Anyline may encounter difficulties with images that exhibit camera-like blurs or soft focus, and may require iterations based on community feedback.
-- Due to limited personnel, there are currently no plans to develop an Anyline preprocessor plugin for AUTOMATIC1111-WebUI. We will contact the developer of the ControlNet plugin in AUTOMATIC1111-WebUI to discuss integrating Anyline into their plugin.
 - We also plan to contact the author of ComfyUI or the developer of ComfyUI-Controlnet to integrate Anyline into ComfyUI for easier future use.
 
 ## Citation
