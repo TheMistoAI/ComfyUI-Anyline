@@ -72,6 +72,10 @@ Follow instruction in https://github.com/Mikubill/sd-webui-controlnet/discussion
 - Anyline may encounter difficulties with images that exhibit camera-like blurs or soft focus, and may require iterations based on community feedback.
 - We also plan to contact the author of ComfyUI or the developer of ComfyUI-Controlnet to integrate Anyline into ComfyUI for easier future use.
 
+## 中国（大陆地区）便捷下载地址 (MTEED.pth)：
+链接：https://pan.baidu.com/s/1ik11P_u1vK8mI4q33v0MTQ?pwd=v8f1  
+提取码：v8f1 
+
 ## Citation
 
 ```bibtex
