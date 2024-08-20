@@ -6,9 +6,9 @@ from skimage import morphology
 
 # Requires comfyui_controlnet_aux funcsions and classes
 from custom_nodes.comfyui_controlnet_aux.utils import common_annotator_call
-from custom_nodes.comfyui_controlnet_aux.src.controlnet_aux.teed import TEDDetector
-from custom_nodes.comfyui_controlnet_aux.src.controlnet_aux.teed.ted import TED
-from custom_nodes.comfyui_controlnet_aux.src.controlnet_aux.lineart_standard import LineartStandardDetector
+from custom_nodes.comfyui_controlnet_aux.src.custom_controlnet_aux.teed import TEDDetector
+from custom_nodes.comfyui_controlnet_aux.src.custom_controlnet_aux.teed.ted import TED
+from custom_nodes.comfyui_controlnet_aux.src.custom_controlnet_aux.lineart_standard import LineartStandardDetector
 
 class AnyLine:
     @classmethod
