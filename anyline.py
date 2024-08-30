@@ -29,15 +29,16 @@ class AnyLine:
         self.device = "cpu"
 
     def load_model(self):
+        subfolder = "Anyline"
         checkpoint_filename = "MTEED.pth"
-        checkpoint_dir = Path(__file__).parent.resolve() / "checkpoints"
+        checkpoint_dir = Path(__file__).parent.resolve() / "checkpoints" / subfolder
         checkpoint_path = checkpoint_dir / checkpoint_filename
 
         # Download the model if it's not present
         if not checkpoint_path.is_file():
             print("Model not found locally, downloading from HuggingFace...")
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
-            checkpoint_path = hf_hub_download(repo_id="TheMistoAI/MistoLine", filename=checkpoint_filename, subfolder="Anyline", local_dir=checkpoint_dir)
+            checkpoint_path = hf_hub_download(repo_id="TheMistoAI/MistoLine", filename=checkpoint_filename, subfolder=subfolder, local_dir=checkpoint_dir)
 
         model = TED()
         model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
